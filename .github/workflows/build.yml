@@ -42,6 +42,7 @@ jobs:
         run: dotnet build --no-restore
 
       - name: Test with dotnet
+        shell: bash
         run: dotnet test --logger trx --results-directory "TestResults-${{ matrix.dotnet-version }}"
 
       - name: Upload dotnet test results

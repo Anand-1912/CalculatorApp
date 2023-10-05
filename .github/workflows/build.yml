@@ -3,7 +3,7 @@ on:
   workflow_dispatch:
 env:
   BUILD_OUTPUT_PATH: "{{github.workspace}}/build-artifacts"
-  UNIT_TESTS_PROJECT_PATH: "{{github.workspace}}/CalculatorTests/CalculatorTests.csproj"
+  UNIT_TEST_PROJECTS_PATH: "{{github.workspace}}/CalculatorTests/CalculatorTests.csproj"
 
 jobs:
   build:
@@ -43,7 +43,7 @@ jobs:
 
       - name: Test with dotnet
         shell: bash
-        run: dotnet test --logger trx --results-directory "TestResults-${{ matrix.dotnet-version }}"
+        run: dotnet test ${{ env.UNIT_TEST_PROJECTS_PATH }} --logger trx --results-directory "TestResults-${{ matrix.dotnet-version }}"
 
       - name: Upload dotnet test results
         uses: actions/upload-artifact@v3

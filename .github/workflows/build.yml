@@ -1,0 +1,61 @@
+name: Build
+on:
+  workflow_dispatch:
+env:
+  BUILD_OUTPUT_PATH: "{{github.workspace}}/build-artifacts"
+  UNIT_TESTS_PROJECT_PATH: "{{github.workspace}}/CalculatorTests/CalculatorTests.csproj"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        dotnet-version: ["6.0.x"]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Dotnet
+        uses: actions/setup-dotnet@v2
+        with:
+          dotnet-version: ${{ matrix.dotnet-version }}
+
+      - name: Install GitVersion
+        uses: gittools/actions/gitversion/setup@v0.9.11
+        with:
+          versionSpec: "5.x"
+          includePrerelease: true
+
+      - name: Use GitVersion
+        id: GitVersion
+        uses: gittools/actions/gitversion/execute@v0.9.11
+
+      - name: What Version
+        run: echo ${{steps.gitversion.outputs.semVer}}
+
+      - name: Restore dependencies
+        run: dotnet restore
+
+      - name: Build dependencies
+        run: dotnet build --no-restore
+
+      - name: Test with dotnet
+        run: dotnet test --logger trx --results-directory "TestResults-${{ matrix.dotnet-version }}"
+
+      - name: Upload dotnet test results
+        uses: actions/upload-artifact@v3
+        with:
+          name: dotnet-results-${{ matrix.dotnet-version }}
+          path: TestResults-${{ matrix.dotnet-version }}
+        # Use always() to always run this step to publish test results when there are test failures
+        if: ${{ always() }}
+
+      - name: Test Report
+        uses: dorny/test-reporter@v1
+        if: success() || failure()
+        with:
+          name: Tests
+          path: TestResults-${{ matrix.dotnet-version }}/*.trx
+          reporter: dotnet-trx
